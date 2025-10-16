@@ -24,8 +24,16 @@ public class TripRecordsService : RpcTripRecordsServiceBase
     public override async Task<RpcInsertResponse> InsertTrips(RpcTripRecords request, ServerCallContext context)
     {
         var dbEntities = _mapper.Map<List<TripRecord>>(request.Trips);
-        
-        await _dbContext.BulkInsertAsync(dbEntities, cancellationToken: context.CancellationToken);
+
+        try
+        {
+            await _dbContext.BulkInsertAsync(dbEntities, cancellationToken: context.CancellationToken);
+        }
+        catch (Exception)
+        {
+            throw new RpcException(new Status(StatusCode.Aborted, "Помилка завантаження даних"));
+        }
+
         return new RpcInsertResponse { Inserted = dbEntities.Count };
     }
 
@@ -39,9 +47,7 @@ public class TripRecordsService : RpcTripRecordsServiceBase
             .FirstOrDefaultAsync(context.CancellationToken);
 
         if (result == null)
-        {
-            throw new RpcException(new Status(StatusCode.NotFound, "Данные о поездках отсутствуют."));
-        }
+            throw new RpcException(new Status(StatusCode.NotFound, "Дані про поїздки відсутні"));
 
         return new RpcTopTipResponse
         {
@@ -58,6 +64,9 @@ public class TripRecordsService : RpcTripRecordsServiceBase
             .Take(request.Count)
             .ToListAsync(context.CancellationToken);
 
+        if (!trips.Any())
+            throw new RpcException(new Status(StatusCode.NotFound, "Дані про поїздки відсутні"));
+
         var response = new RpcTripRecords();
         response.Trips.AddRange(_mapper.Map<IEnumerable<RpcTripRecord>>(trips));
         return response;
@@ -70,12 +79,15 @@ public class TripRecordsService : RpcTripRecordsServiceBase
             .OrderByDescending(t => EF.Functions.DateDiffSecond(t.PickupDatetime, t.DropoffDatetime))
             .Take(request.Count)
             .ToListAsync(context.CancellationToken);
-        
+
+        if (!trips.Any())
+            throw new RpcException(new Status(StatusCode.NotFound, "Дані про поїздки відсутні"));
+
         var response = new RpcTripRecords();
         response.Trips.AddRange(_mapper.Map<IEnumerable<RpcTripRecord>>(trips));
         return response;
     }
-    
+
     public override async Task<RpcTripRecords> SearchTripsByPickupId(RpcSearchRequest request, ServerCallContext context)
     {
         var trips = await _dbContext.TripRecords
@@ -83,6 +95,9 @@ public class TripRecordsService : RpcTripRecordsServiceBase
             .Where(t => t.PULocationID == request.PuLocationId)
             .Take(request.Count)
             .ToListAsync(context.CancellationToken);
+
+        if (!trips.Any())
+            throw new RpcException(new Status(StatusCode.NotFound, "Дані про поїздки відсутні"));
 
         var response = new RpcTripRecords();
         response.Trips.AddRange(_mapper.Map<IEnumerable<RpcTripRecord>>(trips));
