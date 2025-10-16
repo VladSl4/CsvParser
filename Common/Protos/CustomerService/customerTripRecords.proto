@@ -1,0 +1,45 @@
+syntax = "proto3";
+
+import "google/protobuf/empty.proto";
+import "google/protobuf/timestamp.proto";
+
+option csharp_namespace = "CustomerService.Protos";
+
+package customerService;
+
+service RpcCustomerTripRecordsService {
+  rpc GetTopByDistance (RpcTopRequest) returns (RpcTripRecords);
+  rpc GetTopByDuration (RpcTopRequest) returns (RpcTripRecords);
+  rpc GetTopAverageTip (google.protobuf.Empty) returns (RpcTopTipResponse);
+  rpc SearchTripsByPickupId (RpcSearchRequest) returns (RpcTripRecords);
+}
+
+message RpcTripRecord {
+  google.protobuf.Timestamp pickup_datetime = 1;
+  google.protobuf.Timestamp dropoff_datetime = 2;
+  int32 passenger_count = 3;
+  double trip_distance = 4;
+  string store_and_fwd_flag = 5;
+  int32 pu_location_id = 6;
+  int32 do_location_id = 7;
+  double fare_amount = 8;
+  double tip_amount = 9;
+}
+
+message RpcTripRecords {
+  repeated RpcTripRecord trips = 1;
+}
+
+message RpcTopRequest {
+  int32 count = 1;
+}
+
+message RpcTopTipResponse {
+  int32 pu_location_id = 1;
+  double avg_tip = 2;
+}
+
+message RpcSearchRequest {
+  int32 pu_location_id = 1;
+  int32 count = 2;
+}

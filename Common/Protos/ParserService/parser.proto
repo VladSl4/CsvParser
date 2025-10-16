@@ -1,0 +1,20 @@
+syntax = "proto3";
+
+import "google/protobuf/empty.proto";
+
+option csharp_namespace = "ParserService.Protos";
+
+package parserService;
+
+service RpcParserService {
+  rpc Insert (RpcInsertRequest) returns (RpcInsertResponse);
+}
+
+message RpcInsertRequest {
+  string filePath = 1;
+}
+
+message RpcInsertResponse {
+  int32 inserted = 1;
+}
+
